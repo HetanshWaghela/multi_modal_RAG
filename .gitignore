@@ -1,0 +1,15 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Ingestion outputs
+ingestion/out/
+ingestion/data/clean/
+
+# Local config
+.env
+ingestion/.env
+
+# macOS
+.DS_Store
