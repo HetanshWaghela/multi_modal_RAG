@@ -1,3 +1,4 @@
+from jupyterlab_server import slugify
 from pymongo import ASCENDING,MongoClient, errors as mongo_errors
 import argparse
 from pathlib import Path
@@ -8,6 +9,7 @@ MONGO_URI= os.getenv("MONGO_URI", "mongodb://localhost:27017")
 DB_NAME= os.getenv("DB_NAME", "default_database")
 COLLECTION_NAME= os.getenv("COLLECTION_NAME", "default_collection")
 SUPPORTED_EXT = {".pdf", ".docx", ".txt", ".md", ".html", ".htm"}
+from tqdm import tqdm
 
 
 
@@ -61,6 +63,39 @@ def main():
     
     ##dedupe
     seen_checksums = set() 
+
+    for path in tqdm(files, desc= "Ingesting"):
+        try:
+            #first we extract
+            text, source_type = extract_text(path) #also has OCR fallback
+            text= normalize_text(text)
+            if not text:
+                print(f"[warning] No text extracted from {path.name}, skipping.")
+                continue
+
+            #metadata
+            ext= path.suffix.lower()
+            mime = guess_mime(ext)
+            title = path.stem
+            lang = detect_lang(text)
+
+            #saving a clean doc copy
+            clean_dir= ROOT/ "data" / "clean"  
+            clean_dir.mkdir(parents=True, exist_ok=True)
+            (clean_dir/ f"{slugify(title)}.txt").write_text(text, encoding="utf-8")
+
+            #now we chunk
+            chunks = chunk_text(text, CHUNK_SIZE, CHUNK_OVERLAP)
+
+            for idx, (start, end, chunk) in enumerate(chunks):
+                checksum = sha256(chunk.lower().strip())
+
+
+
+
+
+
+            
 
 
     
